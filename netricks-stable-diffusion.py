@@ -155,7 +155,7 @@ class NetricsStableDiffusionDialog_Txt2Img(NetricsStableDiffusionDialog):
         height = image.get_height()
         self.width_entry, self.height_entry = self.add_width_height_text_fields(self, width, height)  
         self.prompt_entry = self.add_positive_prompt_text_field(self)
-        self.negative_prompt_entry = self.add_positive_prompt_text_field(self)
+        self.negative_prompt_entry = self.add_negative_prompt_text_field(self)
         self.cfg_scale_slider = self.add_cfg_scale_slider(self)
         self.steps_slider = self.add_steps_slider(self)
         self.denoising_strength_slider = self.add_denoising_strength_slider(self)
@@ -192,18 +192,20 @@ class NetricsStableDiffusionDialog_Txt2Img(NetricsStableDiffusionDialog):
     def add_positive_prompt_text_field(self, dialog):
         self.add_label(dialog, "Insert positive prompt:")
         content_area = dialog.get_content_area()
-        text_entry = Gtk.Entry()
-        text_entry.set_text("")
-        content_area.pack_start(text_entry, True, True, 0)
-        return text_entry
+        text_view = Gtk.TextView()
+        text_buffer = text_view.get_buffer()
+        text_buffer.set_text("")
+        content_area.pack_start(text_view, True, True, 0)
+        return text_view
         
     def add_negative_prompt_text_field(self, dialog):
         self.add_label(dialog, "Insert negative prompt:")
         content_area = dialog.get_content_area()
-        text_entry = Gtk.Entry()
-        text_entry.set_text("")
-        content_area.pack_start(text_entry, True, True, 0)
-        return text
+        text_view = Gtk.TextView()
+        text_buffer = text_view.get_buffer()
+        text_buffer.set_text("")
+        content_area.pack_start(text_view, True, True, 0)
+        return text_view
 
     def add_steps_slider(self, dialog):
         self.add_label(dialog, "Insert steps:")
@@ -219,7 +221,7 @@ class NetricsStableDiffusionDialog_Txt2Img(NetricsStableDiffusionDialog):
             if prefs:
                 self.width_entry.set_text(str(prefs["width"]))
                 self.height_entry.set_text(str(prefs["height"]))
-                self.prompt_entry.set_text(prefs["prompt"])
+                self.prompt_entry.get_buffer().set_text(prefs["prompt"])
                 self.negative_prompt_entry.set_text(prefs["negative_prompt"])
                 self.cfg_scale_slider.set_value(prefs["cfg_scale"])
                 self.steps_slider.set_value(prefs["steps"])
@@ -235,8 +237,12 @@ class NetricsStableDiffusionDialog_Txt2Img(NetricsStableDiffusionDialog):
             "params": {
             "width": int(self.width_entry.get_text()),
             "height": int(self.height_entry.get_text()),
-            "prompt": self.prompt_entry.get_text(),
-            "negative_prompt": self.negative_prompt_entry.get_text(),
+            "prompt": self.prompt_entry.get_buffer().get_text(
+                self.prompt_entry.get_buffer().get_start_iter(), 
+                self.prompt_entry.get_buffer().get_end_iter(), True),
+            "negative_prompt": self.negative_prompt_entry.get_text(
+                self.negative_prompt_entry.get_buffer().get_start_iter(), 
+                self.negative_prompt_entry.get_buffer().get_end_iter(), True),
             "cfg_scale": self.cfg_scale_slider.get_value(),
             "steps": self.steps_slider.get_value(),
             "denoising_strength": self.denoising_strength_slider.get_value(),
@@ -336,10 +342,11 @@ class NetricsStableDiffusionDialog_Img2Img(NetricsStableDiffusionDialog):
         self.image = image
         self.all_image_vs_selection_chooser = self.add_all_image_vs_selection_chooser(self)
         self.prompt_entry = self.add_positive_prompt_text_field(self)
-        self.negative_prompt_entry = self.add_positive_prompt_text_field(self)
+        self.negative_prompt_entry = self.add_negative_prompt_text_field(self)
         self.cfg_scale_slider = self.add_cfg_scale_slider(self)
         self.steps_slider = self.add_steps_slider(self)
         self.denoising_strength_slider = self.add_denoising_strength_slider(self)
+        self.inpainting_fill_chooser = self.add_inpainting_fill_chooser(self)
 
         self.apply_data(prefs)
 
@@ -348,6 +355,18 @@ class NetricsStableDiffusionDialog_Img2Img(NetricsStableDiffusionDialog):
 
         # add action to close the dialog
         self.connect("destroy", self.on_close)
+
+    def add_inpainting_fill_chooser(self, dialog):
+        self.add_label(dialog, "Insert inpainting fill:")
+        content_area = dialog.get_content_area()
+        chooser = Gtk.ComboBoxText()
+        chooser.append_text("fill")
+        chooser.append_text("original")
+        chooser.append_text("latent noise")
+        chooser.append_text("latent nothing")
+        chooser.set_active(1)
+        content_area.pack_start(chooser, True, True, 0)
+        return chooser
 
     def add_all_image_vs_selection_chooser(self, dialog):
         self.add_label(dialog, "Insert image:")
@@ -380,20 +399,23 @@ class NetricsStableDiffusionDialog_Img2Img(NetricsStableDiffusionDialog):
         return width_entry, height_entry
 
     def add_positive_prompt_text_field(self, dialog):
+        #multy line text field
         self.add_label(dialog, "Insert positive prompt:")
         content_area = dialog.get_content_area()
-        text_entry = Gtk.Entry()
-        text_entry.set_text("")
-        content_area.pack_start(text_entry, True, True, 0)
-        return text_entry
+        text_view = Gtk.TextView()
+        text_buffer = text_view.get_buffer()
+        text_buffer.set_text("")
+        content_area.pack_start(text_view, True, True, 0)
+        return text_view
         
     def add_negative_prompt_text_field(self, dialog):
         self.add_label(dialog, "Insert negative prompt:")
         content_area = dialog.get_content_area()
-        text_entry = Gtk.Entry()
-        text_entry.set_text("")
-        content_area.pack_start(text_entry, True, True, 0)
-        return text
+        text_view = Gtk.TextView()
+        text_buffer = text_view.get_buffer()
+        text_buffer.set_text("")
+        content_area.pack_start(text_view, True, True, 0)
+        return text_view
 
 
     def add_steps_slider(self, dialog):
@@ -412,11 +434,12 @@ class NetricsStableDiffusionDialog_Img2Img(NetricsStableDiffusionDialog):
             prefs = data["params"]
             if prefs:
                 self.all_image_vs_selection_chooser.set_active(1 if data["selection_only"] else 0)
-                self.prompt_entry.set_text(prefs["prompt"])
-                self.negative_prompt_entry.set_text(prefs["negative_prompt"])
+                self.prompt_entry.get_buffer().set_text(prefs["prompt"])
+                self.negative_prompt_entry.get_buffer().set_text(prefs["negative_prompt"])
                 self.steps_slider.set_value(prefs["steps"])
                 self.cfg_scale_slider.set_value(prefs["cfg_scale"])
                 self.denoising_strength_slider.set_value(prefs["denoising_strength"])
+                self.inpainting_fill_chooser.set_active(prefs["inpainting_fill"])
         except Exception as e:
             print(f"Error while applying preferences: {e}")
             traceback.print_exc()
@@ -456,13 +479,18 @@ class NetricsStableDiffusionDialog_Img2Img(NetricsStableDiffusionDialog):
             "api_name": "img2img",
             "selection_only": is_selection_only,
             "params": { 
-                "prompt": self.prompt_entry.get_text(),
-                "negative_prompt": self.negative_prompt_entry.get_text(),
+                "prompt": self.prompt_entry.get_buffer().get_text(
+                    self.prompt_entry.get_buffer().get_start_iter(), 
+                    self.prompt_entry.get_buffer().get_end_iter(), True),
+                "negative_prompt": self.negative_prompt_entry.get_buffer().get_text(
+                    self.negative_prompt_entry.get_buffer().get_start_iter(), 
+                    self.negative_prompt_entry.get_buffer().get_end_iter(), True),
                 "cfg_scale": self.cfg_scale_slider.get_value(),
                 "steps": self.steps_slider.get_value(),
                 "denoising_strength": self.denoising_strength_slider.get_value(),
                 "enable_hr": False,
-                "inpainting_fill": 1, #original
+                "inpainting_fill": self.inpainting_fill_chooser.get_active(),
+                "save_images" : True
             }
         }
         return data
@@ -513,9 +541,10 @@ class NetricsStableDiffusionPlugin(Gimp.PlugIn):
     def do_query_procedures(self):
         print("Querying procedures")
         arr = [
-            "txt2img",
+            #"txt2img",
             "img2img",
-            "clean"
+            "clean",
+            #"apply",
             ]
         return arr
 
@@ -529,6 +558,8 @@ class NetricsStableDiffusionPlugin(Gimp.PlugIn):
             return self.run_img2img
         elif name == "clean":
             return self.run_clean
+        elif name == "apply":
+            return self.run_apply
         else:
             return None
 
@@ -539,6 +570,9 @@ class NetricsStableDiffusionPlugin(Gimp.PlugIn):
             return "Generate Image from Image"
         elif name == "clean":
             return "Clean NGen. layers"
+        elif name == "apply":
+            return "Send changes to chosen layer"
+        
         else:
             return None
 
@@ -558,6 +592,37 @@ class NetricsStableDiffusionPlugin(Gimp.PlugIn):
 
         return procedure
 
+    def active_layer(self, image):
+        drawables = image.get_selected_drawables()
+        if not drawables:
+            print("Ошибка: Нет активных слоев")
+            return None
+        return drawables[0]
+
+    def top_ngen_nonhidden_layer(self, image):
+        for layer in image.get_layers():
+            if layer.get_name().startswith("NGen.") and layer.get_visible():
+                return layer
+        return None
+
+    def copy_data_with_selection(self, image, source, target, selection):
+            # Создаем временный слой, чтобы скопировать выделенную область
+        Gimp.context_set_active_layer(source)
+        Gimp.edit_copy(source)  # Копируем выделение в буфер
+
+        Gimp.image_set_active_layer(image, target)
+        floating_sel = Gimp.edit_paste(target, True)  # Вставляем на новый слой
+
+        if floating_sel:
+            Gimp.floating_sel_anchor(floating_sel)  # Анкерим (закрепляем) вставленное изображение
+    
+        
+
+    def run_apply(self, procedure, run_mode, image, drawables, config, run_data):
+        source = self.top_ngen_nonhidden_layer(image)
+        target = self.active_layer(image)
+        selection = image.get_selection()
+        self.copy_data_with_selection(image, source, target, selection)
 
     def run_txt2img(self, procedure, run_mode, image, drawables, config, run_data):
         dialog = NetricsStableDiffusionDialog_Txt2Img(
@@ -573,7 +638,22 @@ class NetricsStableDiffusionPlugin(Gimp.PlugIn):
 
         return self.doit(data, procedure, image, ReturnTo.NEW_TAB)
 
+    def all_ngen_layers(self, image):
+        layers = image.get_layers()
+        ngen_layers = []
+        for layer in layers:
+            if layer.get_name().startswith("NGen."):
+                ngen_layers.append(layer)
+        return ngen_layers
+
+    def hide_ngen_layers(self, image):
+        layers = self.all_ngen_layers(image)
+        for layer in layers:
+            layer.set_visible(False)
+
     def run_img2img(self, procedure, run_mode, image, drawables, config, run_data):
+        self.hide_ngen_layers(image)
+
         dialog = NetricsStableDiffusionDialog_Img2Img(
             "Netricks Stable Diffusion", None, 0, image)
         dialog.show_all()
