@@ -73,10 +73,7 @@ def raw_image_from_base64(image_data: str):
         width, height = image.size
         size = (width, height)
 
-        arr = np.frombuffer(raw_image, dtype=np.uint8).reshape((height, width, 4)).copy()
-        arr[:, :, :3] = np.power(arr[:, :, :3] / 255.0, 2.2) * 255
-
-        corrected_raw_image = arr.tobytes()
+        corrected_raw_image = raw_image
 
         #gimp_image = Gimp.Image.new(width, height, Gimp.ImageType.RGB_IMAGE)
         #drawable = Gimp.Layer.new(gimp_image, "Generated Image", width, height, Gimp.ImageType.RGB_IMAGE, 100, Gimp.LayerMode.NORMAL)
@@ -257,15 +254,12 @@ def pil_image_from_drawable(drawable):
     buffer = drawable.get_buffer()
     rect = Gegl.Rectangle.new(0, 0, width, height)
     raw_bytes = buffer.get(
-        rect=rect, 
-        scale=1, 
-        format_name="RGBA u8",
-        repeat_mode=Gegl.AbyssPolicy.CLAMP) 
+        rect=rect,
+        scale=1,
+        format_name="R'G'B'A u8",
+        repeat_mode=Gegl.AbyssPolicy.CLAMP)
 
-    arr = np.frombuffer(raw_bytes, dtype=np.uint8).reshape((height, width, 4)).copy()
-    arr[:, :, :3] = np.power(arr[:, :, :3] / 255.0, 1/2.2) * 255
-
-    pil_img = Image.fromarray(arr.astype(np.uint8), "RGBA")
+    pil_img = Image.frombytes("RGBA", (width, height), raw_bytes)
     return pil_img
 
 def encode_gimp_image_selected_drawable_to_png(image):
@@ -700,7 +694,7 @@ class NetricsStableDiffusionPlugin(Gimp.PlugIn):
             output_image.insert_layer(layer, None, 0)
             buffer = layer.get_buffer()
             rect = Gegl.Rectangle.new(0, 0, width, height)
-            buffer.set(rect, "RGBA u8", raw_image)
+            buffer.set(rect, "R'G'B'A u8", raw_image)
 
             if mode == ReturnTo.NEW_TAB:
                 original_layer = Gimp.Layer.new(output_image, "Original Image", width, height, Gimp.ImageType.RGB_IMAGE, 100, Gimp.LayerMode.NORMAL)
